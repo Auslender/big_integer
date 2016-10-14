@@ -10,8 +10,10 @@
 
 const long long BASE = ((int64_t)1 << (int64_t)31);
 const int POWER = 31;
+
 big_integer::big_integer() :
-        number (std::vector<int64_t>())
+        number (std::vector<int64_t>()),
+        pos(1)
 {}
 
 big_integer::big_integer(big_integer const &other) :
@@ -193,8 +195,9 @@ bool operator==(big_integer const &a, big_integer const &b)
             return false;
         zero |= (i < a.number.size() ? a.number[i] : 0) | (i < b.number.size() ? b.number[i] : 0);
     }
-    if (zero && a.pos != b.pos)
+    if (zero && a.pos != b.pos) {
         return false;
+    }
     return true;
 }
 
@@ -390,7 +393,7 @@ big_integer &big_integer::operator<<=(int rhs)
 {
     int shift = rhs / POWER;
     int64_t s = this->number.size();
-    increase_size(this->number, s + shift - 1);
+    increase_size(this->number, s + shift);
     for (int32_t i = s - 1; i >= 0 && shift; i--) {
         this->number[i + shift] = this->number[i];
         this->number[i] = 0;
@@ -406,14 +409,17 @@ big_integer operator<<(big_integer a, int b)
 
 big_integer &big_integer::operator>>=(int rhs) {
     int shift = rhs / POWER;
-    for (size_t i = shift; i < this->number.size(); i++) {
-        number[i - shift] = number[i];
+    bool ch = 0;
+    if ( *(this->number.begin()) % 2 == 1 && *this < 0) {
+        *this -= 1;
     }
-    for (size_t i = number.size(); i >= number.size() - shift; i--) {
-        number[i] = 0;
+    for (size_t i = shift; i < this->number.size(); i++) {
+        if (number[i - shift] > 0) ch = true;
+        number[i - shift] = number[i];
+        if (shift) number[i] = 0;
     }
     *this /= (1 << (rhs % POWER));
-        if (!pos) {
+    if (!pos && ch) {
         *this -= 1;
     }
     return *this;
